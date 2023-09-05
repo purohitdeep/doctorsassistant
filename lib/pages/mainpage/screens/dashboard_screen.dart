@@ -187,22 +187,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context) {
           return ContentDialog(
             title: const Text("Login"),
-            content: SizedBox(
+            content: const SizedBox(
               height: 90,
               child: Column(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     height: 10,
                   ),
-                  const Text(
-                      "'ArthurMorgan' is installed in this GDrive, enter the password to continue"),
-                  const SizedBox(
+                  Text(
+                      "'ArthurMorgan' is installed in this GDrive"),
+                  SizedBox(
                     height: 10,
                   ),
-                  TextBox(
+                  /*TextBox(
                     placeholder: "Password",
                     controller: passwordController,
-                  ),
+                  ),*/
                 ],
               ),
             ),
@@ -217,7 +217,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: const Text("Login"),
                   onPressed: () {
                     Provider.of<GDriveProvider>(context, listen: false)
-                        .login(passwordController.text);
+                        .login();
                     Navigator.pop(context);
                   }),
             ],
@@ -334,10 +334,20 @@ class FileListGrid extends StatelessWidget {
 class FileInfoSheet extends StatelessWidget {
   const FileInfoSheet({super.key});
 
-  Widget previewWidget(var fileinfosheetprovider) {
+  Widget previewWidget(FileInfoSheetProvider fileinfosheetprovider) {
     // refactor it pls
-    if (fileinfosheetprovider.getPreviewLoadState ==
-        PreviewLoadState.notloaded) {
+      if (fileinfosheetprovider.getPreviewLoadState == PreviewLoadState.loading) {
+      return const Card(
+        child: SizedBox(height: 250, child: Center(child: ProgressRing())),
+      );
+    } else if (fileinfosheetprovider.getPreviewLoadState == PreviewLoadState.loaded){
+      return Card(
+        child: SizedBox(
+            height: 250,
+            child: Image.memory(fileinfosheetprovider.getPreviewData)),
+      );
+    } else /*(fileinfosheetprovider.getPreviewLoadState ==
+          PreviewLoadState.notloaded)*/ {
       return Card(
         child: SizedBox(
           height: 250,
@@ -350,18 +360,7 @@ class FileInfoSheet extends StatelessWidget {
           )),
         ),
       );
-    } else if (fileinfosheetprovider.getPreviewLoadState ==
-        PreviewLoadState.loading) {
-      return const Card(
-        child: SizedBox(height: 250, child: Center(child: ProgressRing())),
-      );
-    } else {
-      return Card(
-        child: SizedBox(
-            height: 250,
-            child: Image.memory(fileinfosheetprovider.getPreviewData)),
-      );
-    }
+      }
   }
 
   @override
@@ -372,14 +371,16 @@ class FileInfoSheet extends StatelessWidget {
       return const Center(child: ProgressRing());
     }
 
+    var  mimeType = lookupMimeType(fileinfosheetprovider.currentSelectedFile!.name);
     return Container(
       margin: const EdgeInsets.only(left: 10, right: 10, top: 39),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (lookupMimeType(fileinfosheetprovider.currentSelectedFile!.name)!
-              .startsWith("image"))
+
+          if (mimeType != null && mimeType.startsWith("image"))
             previewWidget(fileinfosheetprovider),
+
           const SizedBox(
             height: 10,
           ),

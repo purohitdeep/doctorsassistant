@@ -1,7 +1,6 @@
 import 'dart:developer';
 
 import 'package:arthurmorgan/enums.dart';
-import 'package:arthurmorgan/functions/filehandler.dart';
 import 'package:arthurmorgan/global_data.dart';
 import 'package:arthurmorgan/models/gfile.dart';
 import 'package:flutter/material.dart';
@@ -30,42 +29,42 @@ class GDriveProvider extends ChangeNotifier {
   }
 
   void setupArthurMorgan(String password) async {
-    var verifyString = FileHandler.createVerifyString(password);
-    var result =
-        await GlobalData.gDriveManager!.setupArthurMorgan(verifyString);
+    //var verifyString = FileHandler.createVerifyString(password);
+    // var result = await GlobalData.gDriveManager!.setupArthurMorgan(verifyString);
+    var result = await GlobalData.gDriveManager!.setupArthurMorgan();
     if (result) {
       userState = UserState.initiated;
     } else {
-      log("error");
+      log("Error Setting up Application.");
     }
     notifyListeners();
   }
 
-  void login(String password) async {
-    var verifyFileMedia = await GlobalData.gDriveManager!.getVerifyFile();
+  void login() async {
+    try {
+      var verifyFileMedia = await GlobalData.gDriveManager!.getVerifyFile();
+      List<int> verifyFileBytes = [];
 
-    List<int> verifyFileBytes = [];
+      verifyFileMedia.stream.listen((data) {
+        verifyFileBytes.insertAll(verifyFileBytes.length, data);
+      }, onDone: () {
+        log("Download of verification file completed.");
 
-    verifyFileMedia.stream.listen((data) {
-      verifyFileBytes.insertAll(verifyFileBytes.length, data);
-    }, onDone: () {
-      log("Verify DL Done");
-      log(String.fromCharCodes(verifyFileBytes));
-      var result = FileHandler.checkPassword(
-          password, String.fromCharCodes(verifyFileBytes));
-      if (result) {
-        FileHandler.init(password);
+        // Since we're removing password validation, we're going to assume successful login once the file is downloaded.
         isLoggedIn = true;
         notifyListeners();
-      } else {
-        isLoggedIn = false; // why not
+
+      }, onError: (error) {
+        log("Error downloading verification file: $error");
         notifyListeners();
-      }
-    }, onError: (error) {
-      log("Verify DL Some Error");
+      });
+
+    } catch (e) {
+      log("Error in login process: ${e.toString()}");
       notifyListeners();
-    });
+    }
   }
+
 
   void logout() {
     userState = UserState.undetermined;

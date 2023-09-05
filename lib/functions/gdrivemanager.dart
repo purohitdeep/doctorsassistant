@@ -9,7 +9,7 @@ import 'package:oauth2/oauth2.dart';
 class GDriveManager {
   late drive.DriveApi driveApi;
 
-  String? folderID;
+  static String? folderID;
 
   GDriveManager(Client client) {
     driveApi = drive.DriveApi(client);
@@ -24,9 +24,11 @@ class GDriveManager {
 
     List<GFile> files = [];
     for (var item in data.files!) {
-      if (item.name == "arthurmorgan") continue;
-      var gfile = await FileHandler.decryptGfile(GFile(
-          item.id!, item.name!, int.parse(item.size!), item.createdTime!));
+      //if (item.name == "arthurmorgan") continue;
+      // var gfile = await FileHandler.decryptGfile(GFile(
+      //     item.id!, item.name!, int.parse(item.size!), item.createdTime!));
+      var gfile = await GFile(
+          item.id!, item.name!, int.parse(item.size!), item.createdTime!);
       files.add(gfile);
     }
     return files;
@@ -102,8 +104,9 @@ class GDriveManager {
     }
   }
 
-  Future<bool> setupArthurMorgan(String verifyString) async {
+  Future<bool> setupArthurMorgan() async {
     try {
+      // Create a folder named "ArthurMorgan"
       var folder = await driveApi.files.create(drive.File()
         ..name = "ArthurMorgan"
         ..mimeType = 'application/vnd.google-apps.folder'
@@ -111,21 +114,24 @@ class GDriveManager {
             ? null
             : [GlobalData.gCustomRootFolderId!]);
 
-      final Stream<List<int>> mediaStream =
-          Future.value(verifyString.codeUnits).asStream().asBroadcastStream();
-      var media = drive.Media(mediaStream, verifyString.length);
+      // Previously,  using verifyString to create a file named "arthurmorgan" within the "ArthurMorgan" folder.
+      // Since we're removing the need for verifyString, I'm assuming you still want to create this file but just as an empty file.
+
       var driveFile = drive.File();
       driveFile.name = "arthurmorgan";
       driveFile.parents = [folder.id!];
-      final result = await driveApi.files.create(driveFile, uploadMedia: media);
-      log("Upload result: $result");
+      final result = await driveApi.files.create(driveFile);
+
+      log("Created folder 'ArthurMorgan' with file 'arthurmorgan'. Upload result: $result");
+
       checkIfNewUser(); // calling this here to update the folderId, not good
       return true;
     } catch (e) {
-      log(e.toString());
+      log("Error setting up ArthurMorgan: ${e.toString()}");
       return false;
     }
   }
+
 
   Future<drive.Media> getVerifyFile() async {
     var data = await driveApi.files.list(
@@ -145,14 +151,14 @@ class GDriveManager {
     return verifyFileMedia;
   }
 
-  Future<bool> uploadFile(
-      String fileName, int fileLength, Stream<List<int>> steram) async {
+  Future<bool> uploadFile(String fileName, int fileLength, Stream<List<int>> steram) async {
     var media = drive.Media(steram, fileLength);
 
     var driveFile = drive.File();
     driveFile.name = fileName;
     driveFile.parents = [folderID!];
 
+    log("uploading file to : ${driveFile.parents.toString()}");
     final response = await driveApi.files.create(driveFile, uploadMedia: media);
     log("response: ${response.toString()}");
 
