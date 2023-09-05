@@ -14,29 +14,37 @@ class CustomTitleBar extends StatelessWidget {
   const CustomTitleBar({super.key});
 
   void uploadFile(BuildContext context) async {
-    // TODO: MOVE THIS
-    log("upload start");
-    var files = await FileHandler.getFile();
+      log("Upload start");
+      var files = await FileHandler.getFile();
     if (files == null) return;
     // showUploadingDialog(context); // ok next time thanks for the warning
 
-    int i = 1;
-    for (File file in files) {
-      Provider.of<TaskInfoPopUpProvider>(context, listen: false).show(
-          "Uploading ${file.path.split("\\").last} ($i / ${files.length})");
-      var encryptedFile = await FileHandler.encryptFile(file);
-      var stream =
-          await FileHandler.getStreamFromFile(encryptedFile.encryptedFile);
-      await GlobalData.gDriveManager!.uploadFile(
-          encryptedFile.encryptedName, encryptedFile.length, stream);
-      log("done");
-      i++;
-    }
+      int i = 1;
+      for (File file in files) {
+        Provider.of<TaskInfoPopUpProvider>(context, listen: false).show(
+            "Uploading ${file.path.split("\\").last} ($i / ${files.length})");
+
+        var stream = await FileHandler.getStreamFromFile(file);
+        // if (stream == null) {
+        //   log("Error: Stream is null for file ${file.path}");
+        //   continue;
+        // }
+        //
+        // if (GlobalData.gDriveManager == null) {
+        //   log("Error: gDriveManager is null");
+        //   continue;
+        // }
+
+        await GlobalData.gDriveManager!.uploadFile(file.path.split("\\").last, file.lengthSync(), stream);
+        log("Upload complete for ${file.path.split("\\").last}");
+        i++;
+      }
 
     // Navigator.pop(context);
-    Provider.of<TaskInfoPopUpProvider>(context, listen: false).hide();
-    Provider.of<GDriveProvider>(context, listen: false).getFileList();
+      Provider.of<TaskInfoPopUpProvider>(context, listen: false).hide();
+      Provider.of<GDriveProvider>(context, listen: false).getFileList();
   }
+
 
   @override
   Widget build(BuildContext context) {
